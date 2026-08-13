@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Dark theme (default) — an editor-inspired ink palette, not the usual
+     near-black + acid green: a cool ink base with a periwinkle brand accent
+     and a warm amber reserved specifically for Hint Mode. */
+  --ink: #0b0f14;
+  --ink-surface: #10161d;
+  --ink-raised: #161d26;
+  --ink-border: #232b36;
+
+  --text-primary: #e6edf3;
+  --text-secondary: #93a1b0;
+  --text-faint: #5b6774;
+
+  --brand: #7c9cff;
+  --brand-soft: rgba(124, 156, 255, 0.14);
+
+  --hint: #f2a93c;
+  --hint-soft: rgba(242, 169, 60, 0.14);
+
+  --severity-critical: #f85149;
+  --severity-warning: #f0883e;
+  --severity-improvement: #e3b341;
+  --severity-suggestion: #58a6ff;
+}
+
+:root.light {
+  --ink: #f7f8fa;
+  --ink-surface: #ffffff;
+  --ink-raised: #ffffff;
+  --ink-border: #e2e5ea;
+
+  --text-primary: #14181f;
+  --text-secondary: #55606c;
+  --text-faint: #8b95a1;
+
+  --brand: #3358e0;
+  --brand-soft: rgba(51, 88, 224, 0.08);
+
+  --hint: #b3720b;
+  --hint-soft: rgba(179, 114, 11, 0.1);
+
+  --severity-critical: #d1242f;
+  --severity-warning: #bc4c00;
+  --severity-improvement: #9a6700;
+  --severity-suggestion: #0969da;
+}
+
+* {
+  border-color: var(--ink-border);
+}
+
+html,
+body {
+  background: var(--ink);
+  color: var(--text-primary);
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background: var(--brand-soft);
+  color: var(--text-primary);
+}
+
+/* Thin, editor-style scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--ink-border);
+  border-radius: 8px;
+}
