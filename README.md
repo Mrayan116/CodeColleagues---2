@@ -1,239 +1,274 @@
-# Code Colleague
+Code Colleague
 
-An AI-powered programming tutor for college/university students — a chat tutor, a code
-debugger, and a code reviewer, built to teach rather than to hand over finished answers.
+Code Colleague is an AI-powered programming tutor designed for college and university students. It provides help with programming questions, debugging, code reviews, code explanations, and practice problems while encouraging students to understand the solution instead of simply copying it.
 
-> **Learn to code. Don't just copy code.**
+Learn to code, not just copy code.
 
-This is **Phases 1 & 2** of a staged build. The AI Tutor, Hint Mode, Code Debugger, Code Review,
-Explain Code, Practice Generator, and Chat History are all fully functional end to end. The
-Dashboard and Settings are scaffolded in the nav (marked "Phase 3") and described under
-[Roadmap](#roadmap) below, ready to be built on top of this foundation.
+This repository contains Phases 1 and 2 of the project. The AI Tutor, Hint Mode, Code Debugger, Code Review, Explain Code, Practice Generator, and Chat History are implemented end to end. Dashboard and Settings functionality are planned for Phase 3.
 
----
+Features
+AI Tutor: Ask programming questions about errors, concepts, algorithms, or code. Users can select Beginner, Intermediate, or Advanced difficulty levels. The tutor is designed to provide guidance and hints instead of immediately giving complete solutions.
+Hint Mode: Provides a progressive Hint 1, Hint 2, Hint 3, and Solution workflow. Each hint is revealed individually so students can attempt the problem before seeing the answer.
+Code Debugger: Submit Python, Java, C++, or C code with an optional error message and expected behavior. The debugger identifies the problem, explains why it occurs, provides a hint, and generates a suggested fix.
+Code Review: Analyzes submitted code and categorizes findings as Critical, Warning, Improvement, or Suggestion. Each finding includes a location, explanation, and recommended improvement.
+Explain Code: Breaks down code by providing a summary, inputs and outputs, edge cases, and time and space complexity. Detailed mode also provides a section-by-section explanation.
+Practice Question Generator: Generates programming questions based on language, topic, difficulty, and question count. Each problem includes example input/output, constraints, hints, and a solution.
+Chat History: Stores AI Tutor conversations in PostgreSQL and allows previous conversations to be viewed and continued.
+Tech Stack
 
-## Features
+Frontend: Next.js 14, TypeScript, Tailwind CSS, Monaco Editor, lucide-react
 
-- **AI Tutor** — a chat interface for programming questions (errors, concepts, algorithms,
-  "explain this code"). Adjusts explanations to a Beginner / Intermediate / Advanced level you
-  pick per conversation, and defaults to hinting rather than solving homework-style questions
-  outright.
-- **Hint Mode** — toggle it on in the AI Tutor and describe what you're stuck on. Instead of a
-  straight answer, you get a progressive **Hint 1 → Hint 2 → Hint 3 → Solution** ladder — each
-  hint revealed one click at a time, solution last.
-- **Code Debugger** — paste code (+ optional error message and expected behavior) in Python,
-  Java, C++, or C. Returns a structured **Problem → Why it happens → Hint → Suggested fix**
-  walkthrough; the fix is only revealed when you ask for it, visualized with the same
-  progressive "hint ladder."
-- **Code Review** — paste code, get severity-tagged findings (🔴 Critical / 🟠 Warning /
-  🟡 Improvement / 🔵 Suggestion), each with a location, explanation, and concrete suggestion —
-  not a silent full rewrite.
-- **Explain Code** — paste a snippet and get a high-level summary, inputs/outputs, edge cases,
-  time/space complexity, and (in Detailed mode) a chunk-by-chunk walkthrough.
-- **Practice Question Generator** — pick a language, topic, difficulty, and count; get original
-  practice problems with example I/O and constraints. Hints (2 per question, progressive) and
-  the solution stay hidden until you click for them.
-- **Chat History** — every AI Tutor conversation is saved and browsable, with a "Continue this
-  conversation" link back into the Tutor.
+Backend: FastAPI, Pydantic v2, SQLAlchemy 2.0, Alembic
 
-## Tech Stack
+Database: PostgreSQL
 
-**Frontend** — Next.js 14 (App Router) · TypeScript · Tailwind CSS · Monaco Editor · lucide-react
+AI: Provider-independent LLMProvider architecture with Groq as the default provider and OpenAI as an alternative.
 
-**Backend** — FastAPI · Pydantic v2 · SQLAlchemy 2.0 · Alembic
+Architecture
+                    ┌────────────────────────┐
+                    │    Next.js Frontend    │
+                    │                        │
+                    │ Tutor / Debugger /     │
+                    │ Review / Practice      │
+                    └───────────┬────────────┘
+                                │
+                           REST / JSON
+                                │
+                    ┌───────────▼────────────┐
+                    │     FastAPI Backend    │
+                    │                        │
+                    │ API Routes             │
+                    │ Services               │
+                    │ Validation             │
+                    └───────┬─────────┬──────┘
+                            │         │
+                 ┌──────────▼───┐ ┌──▼──────────────┐
+                 │ AI Services  │ │ LLM Providers   │
+                 │              │ │                 │
+                 │ Tutor        │ │ Groq            │
+                 │ Debugger     │ │ OpenAI          │
+                 │ Reviewer     │ │                 │
+                 └──────┬───────┘ └─────────────────┘
+                        │
+                 ┌──────▼────────┐
+                 │  PostgreSQL   │
+                 └───────────────┘
 
-**Database** — PostgreSQL
+The application separates API routes, AI services, LLM providers, database models, and validation logic. API routes handle requests and responses while the AI service layer contains the prompts and feature-specific logic.
 
-**AI** — Provider-agnostic `LLMProvider` abstraction (Groq by default — free tier — or OpenAI),
-configured entirely through environment variables. No API keys are hard-coded anywhere.
+LLM responses are parsed and validated using Pydantic schemas before being returned to the frontend. This prevents malformed model responses from being passed directly to the client.
 
-## Architecture
+The LLMProvider abstraction also keeps the application independent from a specific AI provider. Groq is used by default, while OpenAI can be selected through environment variables.
 
-```
-                     ┌──────────────────────┐
-                     │   Next.js frontend   │
-                     │  (Tutor / Debugger /  │
-                     │   Review UIs)          │
-                     └──────────┬───────────┘
-                                │ REST (JSON)
-                     ┌──────────▼───────────┐
-                     │    FastAPI backend    │
-                     │  api/  →  services/   │
-                     └─────┬────────────┬────┘
-                           │            │
-                 services/ai/     services/llm/
-              (tutor, debugger,   (LLMProvider
-               reviewer — build     abstraction:
-               prompts, validate    Groq / OpenAI)
-               JSON responses)
-                           │
-                     ┌─────▼─────┐
-                     │ PostgreSQL │
-                     └───────────┘
-```
-
-The AI logic is deliberately kept out of the API route handlers: routes in `app/api/` just
-validate the request, call into `app/services/ai/`, persist an activity record, and return the
-(already-validated) response. Each `services/ai/*.py` module owns one feature's system prompt and
-its expected JSON shape, which is parsed and validated against a Pydantic schema before it ever
-reaches the frontend — the app never trusts raw LLM output.
-
-## Project Structure
-
-```
+Project Structure
 code-colleague/
 ├── backend/
 │   ├── app/
-│   │   ├── api/            # FastAPI routes (health, tutor, debugger, review)
-│   │   ├── core/           # settings, DB engine/session
-│   │   ├── models/         # SQLAlchemy models
-│   │   ├── schemas/        # Pydantic request/response schemas
+│   │   ├── api/                  # FastAPI API routes
+│   │   ├── core/                 # Configuration and database setup
+│   │   ├── models/               # SQLAlchemy database models
+│   │   ├── schemas/              # Pydantic request/response schemas
 │   │   ├── services/
-│   │   │   ├── ai/         # per-feature prompts + JSON validation
-│   │   │   └── llm/        # LLMProvider abstraction (base, groq, openai, factory)
+│   │   │   ├── ai/               # AI feature implementations
+│   │   │   └── llm/              # LLM provider implementations
 │   │   └── main.py
-│   ├── alembic/             # migration scaffolding (Phase 1 uses create_all at startup)
-│   ├── tests/                # pytest, LLM calls mocked
+│   ├── alembic/                  # Database migration scaffolding
+│   ├── tests/                    # Backend tests
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   └── .env.example
 ├── frontend/
 │   ├── src/
-│   │   ├── app/             # Next.js App Router pages
-│   │   ├── components/      # AppShell, HintLadder, CodeEditor, etc.
-│   │   ├── lib/              # API client, theme provider
-│   │   └── types/
+│   │   ├── app/                  # Next.js pages
+│   │   ├── components/           # Reusable UI components
+│   │   ├── lib/                  # API client and utilities
+│   │   └── types/                # TypeScript types
 │   ├── Dockerfile
 │   └── .env.local.example
 ├── docker-compose.yml
 └── README.md
-```
+Setup
+Option A: Docker
 
-## Setup
+Docker is the recommended setup because it runs the frontend, backend, and PostgreSQL database together.
 
-### Option A — Docker (recommended)
+Create the backend environment file:
 
-```bash
 cp backend/.env.example backend/.env
-# then edit backend/.env and add your GROQ_API_KEY (see below)
+
+Add your Groq API key to backend/.env:
+
+GROQ_API_KEY=your_api_key
+
+Create the frontend environment file:
+
+cp frontend/.env.local.example frontend/.env.local
+
+Start the application:
 
 docker compose up --build
-```
 
-- Frontend: http://localhost:3000
-- Backend API docs: http://localhost:8000/docs
+The application will be available at:
 
-### Option B — Run locally without Docker
+Frontend: http://localhost:3000
+Backend:  http://localhost:8000
+API Docs: http://localhost:8000/docs
 
-**Backend**
+To stop the containers:
 
-```bash
+docker compose down
+
+To remove the PostgreSQL volume as well:
+
+docker compose down -v
+Option B: Run Locally
+Backend
 cd backend
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+
+Windows:
+
+.venv\Scripts\activate
+
+macOS/Linux:
+
+source .venv/bin/activate
+
+Install dependencies:
+
 pip install -r requirements.txt
-cp .env.example .env   # then add your GROQ_API_KEY
-# requires a local Postgres reachable at DATABASE_URL in .env
+
+Create the environment file:
+
+cp .env.example .env
+
+Configure the Groq API key and PostgreSQL connection in .env.
+
+Start the backend:
+
 uvicorn app.main:app --reload
-```
+Frontend
 
-**Frontend**
+Open another terminal:
 
-```bash
 cd frontend
-cp .env.local.example .env.local
 npm install
+
+Create the environment file:
+
+cp .env.local.example .env.local
+
+Start the development server:
+
 npm run dev
-```
 
-## Environment Variables
+The frontend will run at:
 
-**`backend/.env`** (see `backend/.env.example`)
+http://localhost:3000
+Environment Variables
+Backend
 
-| Variable | Description |
-|---|---|
-| `LLM_PROVIDER` | `groq` (default) or `openai` |
-| `GROQ_API_KEY` | Free key from [console.groq.com/keys](https://console.groq.com/keys) |
-| `GROQ_MODEL` | Defaults to `llama-3.3-70b-versatile` |
-| `OPENAI_API_KEY` / `OPENAI_MODEL` | Only needed if `LLM_PROVIDER=openai` |
-| `DATABASE_URL` | Postgres connection string |
-| `CORS_ORIGINS` | Comma-separated allowed origins for the frontend |
+The backend environment variables are stored in backend/.env.
 
-**`frontend/.env.local`** (see `frontend/.env.local.example`)
+Variable	Description
+LLM_PROVIDER	LLM provider to use, either groq or openai
+GROQ_API_KEY	API key for Groq
+GROQ_MODEL	Groq model used by the application
+OPENAI_API_KEY	OpenAI API key when using OpenAI
+OPENAI_MODEL	OpenAI model when using OpenAI
+DATABASE_URL	PostgreSQL connection string
+CORS_ORIGINS	Allowed frontend origins
+Frontend
 
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_API_BASE_URL` | Backend API base URL, e.g. `http://localhost:8000/api/v1` |
+The frontend uses frontend/.env.local.
 
-Never commit real `.env` / `.env.local` files — both are already in `.gitignore`.
+Variable	Description
+NEXT_PUBLIC_API_BASE_URL	URL used to communicate with the FastAPI backend
 
-## Adding a new LLM provider
+Do not commit .env or .env.local files containing API keys or other secrets.
 
-1. Create `backend/app/services/llm/<provider>.py` implementing the `LLMProvider` interface
-   (`base.py`) — two methods, `complete()` and `chat()`.
-2. Register it in `backend/app/services/llm/factory.py`.
-3. Add its config fields to `backend/app/core/config.py` and `.env.example`.
+Adding an LLM Provider
 
-No other file needs to change — every feature calls `get_llm_provider()`, never a vendor SDK
-directly.
+The application uses an LLMProvider interface so different providers can be added without modifying the individual AI features.
 
-## Adding a new debugger language
+To add another provider:
 
-The debugger prompt is language-agnostic; add the language to `Language` in
-`app/schemas/common.py`, add it to `SUPPORTED_LANGUAGES` in `app/api/debugger.py`, and add the
-matching Monaco language id in `frontend/src/components/CodeEditor.tsx`.
+Create a provider implementation under backend/app/services/llm/.
+Implement the LLMProvider interface.
+Register the provider in factory.py.
+Add any required configuration values to the application settings.
+Update .env.example.
 
-## Testing
+The AI services continue to call the provider abstraction rather than directly depending on a specific vendor SDK.
 
-```bash
+Adding a Debugger Language
+
+The debugger supports multiple programming languages through a shared AI service.
+
+To add another language:
+
+Add the language to the Language schema.
+Add it to the supported languages in the debugger API.
+Add the corresponding language identifier to the Monaco Editor configuration.
+Testing
+
+Backend tests can be run with:
+
 cd backend
 pytest
-```
 
-All LLM calls are mocked via a `FakeLLMProvider` fixture (`tests/conftest.py`) so the suite never
-hits a real API or consumes credits. Covers: the health endpoint, the tutor endpoint (including
-session-id handling and malformed-LLM-output handling), the debugger endpoint (including the
-hide-fix-until-requested behavior), the review endpoint (including schema-validation failures),
-the hint endpoint (hide/reveal-solution behavior), the explain endpoint (quick vs. detailed
-line-by-line), the practice endpoint (question count validation), and chat history (listing
-sessions, fetching a transcript, 404 on an unknown session).
+The test suite uses a FakeLLMProvider so tests do not consume real API credits.
 
-## API Overview
+Tests cover:
 
-All routes are under `/api/v1`.
+Health endpoint
+AI Tutor requests
+Tutor session handling
+Invalid LLM responses
+Debugger responses
+Hidden solution behavior
+Code Review responses
+Hint generation
+Explain Code
+Practice question validation
+Chat history
+Unknown chat session handling
+API Overview
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | Service status + active LLM provider |
-| `POST` | `/tutor` | Chat with the AI tutor |
-| `GET` | `/tutor/sessions` | List past chat sessions, most recent first |
-| `GET` | `/tutor/sessions/{id}` | Full transcript for one chat session |
-| `GET` | `/debugger/languages` | Supported debugger languages |
-| `POST` | `/debugger` | Structured debugging walkthrough |
-| `POST` | `/review` | Structured, severity-tagged code review |
-| `POST` | `/hint` | Progressive hint ladder (Hint 1/2/3 + gated solution) |
-| `POST` | `/explain` | Code explanation (quick or detailed) |
-| `POST` | `/practice` | Generate practice questions for a topic/difficulty |
+All API routes are available under /api/v1.
 
-Full interactive docs (request/response schemas, try-it-out) at `/docs` once the backend is
-running.
+Method	Endpoint	Description
+GET	/health	Returns service and LLM provider status
+POST	/tutor	Sends a question to the AI Tutor
+GET	/tutor/sessions	Lists previous tutor conversations
+GET	/tutor/sessions/{id}	Retrieves a conversation transcript
+GET	/debugger/languages	Lists supported debugger languages
+POST	/debugger	Analyzes and explains programming errors
+POST	/review	Reviews submitted code
+POST	/hint	Generates a progressive hint sequence
+POST	/explain	Explains submitted code
+POST	/practice	Generates programming practice questions
 
-## Roadmap
+Interactive API documentation is available at:
 
-- **Phase 3** — Student Dashboard (recent activity, weak-topic detection sourced from the
-  `learning_activity` table already being written to by every feature), user profiles, settings.
-- **Phase 4** — RAG over uploaded course notes/lecture PDFs, a sandboxed code execution
-  environment, GitHub integration, personalized learning paths, more languages.
+http://localhost:8000/docs
+Roadmap
+Phase 3
+Student dashboard
+Recent learning activity
+Weak-topic detection
+User profiles
+Application settings
+Phase 4
+RAG using uploaded course notes and lecture PDFs
+Sandboxed code execution
+GitHub integration
+Personalized learning paths
+Additional programming languages
+Project Notes
 
-## Notes on this build
+Authentication is intentionally not included in Phases 1 and 2. Database models already include optional user relationships so authentication can be added later without redesigning the database structure.
 
-- Authentication is intentionally out of scope through Phase 2 (per the brief) — all data is
-  currently unscoped to a user. The `User` model and nullable `user_id` foreign keys already
-  exist on every table so auth can be added later without a schema rewrite.
-- Redis/Celery and pgvector are deliberately not included — nothing so far needs them, per the
-  "don't overengineer" guidance in the brief.
-- The Practice Generator returns each question's hints and solution in the same response (unlike
-  the Debugger/Hint Mode, which gate the solution behind a second request) — the frontend hides
-  them client-side. This was a deliberate simplification since practice questions aren't tied to
-  a single "reveal" moment the way a debugging session is; revisit if that trust boundary matters
-  for your use case.
+Redis, Celery, and pgvector are not currently used because the existing features do not require background processing or vector search.
 
+The Practice Generator returns hints and solutions as part of the API response, while the frontend controls when they are displayed. This can be changed later if server-side solution protection becomes necessary.
