@@ -224,16 +224,5 @@ running.
 - **Phase 4** — RAG over uploaded course notes/lecture PDFs, a sandboxed code execution
   environment, GitHub integration, personalized learning paths, more languages.
 
-## Notes on this build
 
-- Authentication is intentionally out of scope through Phase 2 (per the brief) — all data is
-  currently unscoped to a user. The `User` model and nullable `user_id` foreign keys already
-  exist on every table so auth can be added later without a schema rewrite.
-- Redis/Celery and pgvector are deliberately not included — nothing so far needs them, per the
-  "don't overengineer" guidance in the brief.
-- The Practice Generator returns each question's hints and solution in the same response (unlike
-  the Debugger/Hint Mode, which gate the solution behind a second request) — the frontend hides
-  them client-side. This was a deliberate simplification since practice questions aren't tied to
-  a single "reveal" moment the way a debugging session is; revisit if that trust boundary matters
-  for your use case.
 
