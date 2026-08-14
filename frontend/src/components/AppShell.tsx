@@ -20,8 +20,8 @@ import { clsx } from "clsx";
 interface NavItem {
   label: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  phase?: number; // set when the feature isn't live yet (Phase 2/3 roadmap)
+  icon: LucideIcon;
+  phase?: number;
 }
 
 interface NavGroup {
