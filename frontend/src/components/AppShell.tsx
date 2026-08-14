@@ -13,6 +13,7 @@ import {
   Sparkles,
   Sun,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { clsx } from "clsx";
 
